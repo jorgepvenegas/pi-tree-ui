@@ -14,7 +14,7 @@ A **pi extension** that serves an interactive web-based session tree explorer on
 - 🌲 **Visual tree** — Expand/collapse branches, color-coded by role (user, assistant, tool, compaction, label)
 - 🧭 **Active path** — The current conversation branch is highlighted with ●
 - 🏷 **Labels** — Set or clear labels on any entry directly from the UI
-- 🔀 **Fork & navigate** — Prepare a single tree action and submit it safely via `/tree-ui-sync`
+- 🔀 **Fork & navigate** — Prepare a single tree action and submit it directly from the browser
 - 🚫 **Zero build step** — Single self-contained HTML file, no bundler needed
 - 🔒 **Localhost only** — Binds to `127.0.0.1`, no authentication required
 
@@ -83,13 +83,7 @@ A single action is **prepared** in the browser. Once set, the UI shows the pendi
 
 ### Execute the pending action
 
-Click **🚀 Submit** in the browser sidebar, or run:
-
-```
-/tree-ui-sync
-```
-
-Both execute the prepared action directly through pi's `ExtensionCommandContext` — no LLM turn is triggered.
+Click **🚀 Submit** in the browser sidebar. This executes the prepared action directly through pi's `ExtensionCommandContext` — no LLM turn is triggered.
 
 ## Keyboard Shortcuts
 
@@ -125,7 +119,7 @@ The web UI supports standard mouse interaction:
 3. Version is incremented and broadcast via SSE to all connected browsers
 4. Browser re-fetches `/api/tree` and re-renders
 5. Browser POSTs a single action to `/api/queue`
-6. User clicks **🚀 Submit** (or runs `/tree-ui-sync` in pi) to execute the prepared action directly
+6. User clicks **🚀 Submit** to execute the prepared action directly
 
 ## HTTP API
 

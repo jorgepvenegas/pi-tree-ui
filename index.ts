@@ -395,29 +395,6 @@ export default function (pi: ExtensionAPI) {
 
   const port = parseInt(process.env.PI_TREE_UI_PORT ?? "", 10) || parseInt((pi.getFlag("pi-tree-ui-port") as string | undefined) ?? "8765", 10);
 
-  pi.registerCommand("tree-ui-sync", {
-    description: "Execute the pending action prepared in the pi-tree-ui browser UI",
-    handler: async (_args, ctx) => {
-      console.log(`[tree-ui-sync] Pending action: ${pendingAction?.action ?? "none"}`);
-      if (!pendingAction) {
-        ctx.ui.notify("No pending action", "info");
-        return;
-      }
-
-      const action = pendingAction;
-      pendingAction = null;
-
-      console.log(`[tree-ui-sync] Processing: ${JSON.stringify(action)}`);
-      const results = await executeAction(action, ctx, pi);
-
-      const hasError = results.some(r => r.includes("error"));
-      ctx.ui.notify(`Action ${action.action} ${hasError ? "failed" : "completed"}`, hasError ? "error" : "success");
-      for (const r of results) {
-        ctx.ui.notify(r, "info");
-      }
-    },
-  });
-
   pi.registerCommand("tree-ui", {
     description: "Start the pi-tree-ui server and print the UI URL",
     handler: async (_args, ctx) => {
