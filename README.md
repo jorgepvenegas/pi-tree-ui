@@ -4,6 +4,10 @@ A **pi extension** that serves an interactive web-based session tree explorer on
 
 > **Zero npm dependencies.** Built entirely with Node.js built-ins and vanilla JavaScript.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/jorgepvenegas/pi-tree-ui/main/screenshot.png" alt="pi-tree-ui screenshot" width="720">
+</p>
+
 ## Features
 
 - 🔴 **Live updates** — Server-Sent Events push tree changes instantly as you chat
