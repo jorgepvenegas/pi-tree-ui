@@ -1,10 +1,33 @@
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+function resolveStaticHtml(): string {
+  const candidates = [
+    join(__dirname, "static", "index.html"),
+    join(process.cwd(), "agent", "extensions", "pi-tree-ui", "static", "index.html"),
+    join(homedir(), ".pi", "agent", "extensions", "pi-tree-ui", "static", "index.html"),
+  ];
+
+  for (const candidate of candidates) {
+    try {
+      const html = readFileSync(candidate, "utf8");
+      console.log(`[pi-tree-ui] Serving static HTML from: ${candidate}`);
+      return html;
+    } catch (err) {
+      console.log(`[pi-tree-ui] Static file not found at: ${candidate}`);
+    }
+  }
+
+  throw new Error(
+    `Could not find static/index.html. Tried:\n${candidates.map((c) => `  - ${c}`).join("\n")}`
+  );
+}
 
 interface TreeNode {
   id: string;
@@ -147,8 +170,6 @@ function updateTreeState(ctx: ExtensionContext) {
 function startServer(port: number) {
   if (server) return;
 
-  const staticPath = join(__dirname, "static", "index.html");
-
   server = createServer((req: IncomingMessage, res: ServerResponse) => {
     const url = req.url ?? "/";
     const method = req.method ?? "GET";
@@ -166,12 +187,13 @@ function startServer(port: number) {
 
     if (url === "/" && method === "GET") {
       try {
-        const html = readFileSync(staticPath, "utf8");
+        const html = resolveStaticHtml();
         res.writeHead(200, { "Content-Type": "text/html" });
         res.end(html);
-      } catch {
-        res.writeHead(500);
-        res.end("Failed to load UI");
+      } catch (err) {
+        console.error(`[pi-tree-ui] Failed to serve UI:`, (err as Error).message);
+        res.writeHead(500, { "Content-Type": "text/plain" });
+        res.end(`Failed to load UI\n\n${(err as Error).message}`);
       }
       return;
     }
