@@ -41,6 +41,7 @@
     display: flex;
     flex: 1;
     overflow: hidden;
+    position: relative;
   }
   .tree-panel {
     position: relative;
@@ -271,9 +272,9 @@
       <button onclick="setFilter('user')">User Only</button>
       <button onclick="setFilter('all')">All</button>
     </div>
-    <div class="detail-float" id="detailFloat" style="display:none;"></div>
     <div class="empty-state">Loading session tree...</div>
   </div>
+  <div class="detail-float" id="detailFloat" style="display:none;"></div>
 </div>
 
 <script>
