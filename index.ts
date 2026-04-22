@@ -419,7 +419,6 @@ export default function (pi: ExtensionAPI) {
       const actualPort = server ? (server.address() as any)?.port ?? port : port;
       const url = `http://127.0.0.1:${actualPort}`;
       ctx.ui.notify(`pi-tree-ui: ${url}`, "info");
-      console.log(`[pi-tree-ui] ${url}`);
     },
   });
 
