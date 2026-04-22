@@ -2,10 +2,6 @@
 
 A **pi extension** that serves an interactive web-based session tree explorer on `localhost`. Visualize your conversation history, navigate branches, fork sessions, set labels, and compact context — all from the browser.
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/jorgepvenegas/pi-tree-ui/main/screenshot.png" alt="pi-tree-ui screenshot" width="720">
-</p>
-
 > **Zero npm dependencies.** Built entirely with Node.js built-ins and vanilla JavaScript.
 
 ## Features
@@ -15,6 +11,7 @@ A **pi extension** that serves an interactive web-based session tree explorer on
 - 🧭 **Active path** — The current conversation branch is highlighted with ●
 - 🏷 **Labels** — Set or clear labels on any entry directly from the UI
 - 🔀 **Fork & navigate** — Prepare a single tree action and submit it directly from the browser
+- 📄 **Full content** — View the complete entry text in a modal (entries are truncated to 120 chars in the tree)
 - 🚫 **Zero build step** — Single self-contained HTML file, no bundler needed
 - 🔒 **Localhost only** — Binds to `127.0.0.1`, no authentication required
 
@@ -78,12 +75,17 @@ If the port is in use, it automatically tries the next 10 ports.
 | **📝 Compact context** | Trigger context compaction |
 | **🏷 Set / clear label** | Bookmark an entry with a custom label |
 | **📋 Copy entry ID** | Copy the entry UUID to clipboard |
+| **📄 View Full Content** | Open a modal with the complete entry text |
 
 A single action is **prepared** in the browser. Once set, the UI shows the pending action and disables other actions until you either execute it or **Cancel**.
+
+If you reload the page while an action is pending, the UI automatically restores the detail panel for the target entry.
 
 ### Execute the pending action
 
 Click **🚀 Submit** in the browser sidebar. This executes the prepared action directly through pi's `ExtensionCommandContext` — no LLM turn is triggered.
+
+> **Submit is disabled** when no action is pending, so you can't accidentally click it.
 
 ## Keyboard Shortcuts
 
@@ -93,7 +95,7 @@ The web UI supports standard mouse interaction:
 - **Click ⊟/⊞** — Expand or collapse a branch
 - **Expand All / Collapse All** — Sidebar buttons
 - **User Only / All** — Filter the tree view
-- **🚀 Submit** — Execute the prepared action directly
+- **🚀 Submit** — Execute the prepared action directly (disabled when idle)
 - **✕ Cancel** — Clear the prepared action
 
 ## Architecture
@@ -132,6 +134,7 @@ The web UI supports standard mouse interaction:
 | `GET` | `/api/queue` | Get the current pending action, or `null` |
 | `DELETE` | `/api/queue` | Clear the pending action |
 | `POST` | `/api/sync` | Execute the pending action directly |
+| `GET` | `/api/entry/:id` | Get a single entry with its **full** un-truncated content |
 | `POST` | `/api/shutdown` | Stop the HTTP server |
 
 ### Action format
