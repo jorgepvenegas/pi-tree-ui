@@ -14,7 +14,7 @@ A **pi extension** that serves an interactive web-based session tree explorer on
 - 🌲 **Visual tree** — Expand/collapse branches, color-coded by role (user, assistant, tool, compaction, label)
 - 🧭 **Active path** — The current conversation branch is highlighted with ●
 - 🏷 **Labels** — Set or clear labels on any entry directly from the UI
-- 🔀 **Fork & navigate** — Queue tree actions (navigate, fork, compact) and execute safely via `/tree-ui-sync`
+- 🔀 **Fork & navigate** — Prepare a single tree action and submit it safely via `/tree-ui-sync`
 - 🚫 **Zero build step** — Single self-contained HTML file, no bundler needed
 - 🔒 **Localhost only** — Binds to `127.0.0.1`, no authentication required
 
@@ -79,15 +79,17 @@ If the port is in use, it automatically tries the next 10 ports.
 | **🏷 Set / clear label** | Bookmark an entry with a custom label |
 | **📋 Copy entry ID** | Copy the entry UUID to clipboard |
 
-Actions are **queued** in the browser and executed safely in pi via the `/tree-ui-sync` command.
+A single action is **prepared** in the browser. Once set, the UI shows the pending action and disables other actions until you either **Submit** or **Cancel**.
 
-### Sync queued actions
+### Submit the pending action
 
 ```
 /tree-ui-sync
 ```
 
-This drains the action queue and executes each pending action through pi's `ExtensionCommandContext`.
+This executes the prepared action through pi's `ExtensionCommandContext`.
+
+You can also click **🚀 Submit** in the browser sidebar.
 
 ## Keyboard Shortcuts
 
@@ -97,6 +99,8 @@ The web UI supports standard mouse interaction:
 - **Click ⊟/⊞** — Expand or collapse a branch
 - **Expand All / Collapse All** — Sidebar buttons
 - **User Only / All** — Filter the tree view
+- **🚀 Submit** — Execute the prepared action in pi
+- **✕ Cancel** — Clear the prepared action
 
 ## Architecture
 
@@ -120,8 +124,8 @@ The web UI supports standard mouse interaction:
 2. Extension captures `sessionManager` state and builds a `TreeState`
 3. Version is incremented and broadcast via SSE to all connected browsers
 4. Browser re-fetches `/api/tree` and re-renders
-5. Browser POSTs actions to `/api/queue`
-6. User runs `/tree-ui-sync` in pi to execute queued actions safely
+5. Browser POSTs a single action to `/api/queue`
+6. User clicks **🚀 Submit** (or runs `/tree-ui-sync` in pi) to execute the prepared action safely
 
 ## HTTP API
 
@@ -130,9 +134,9 @@ The web UI supports standard mouse interaction:
 | `GET` | `/` | Serve web UI |
 | `GET` | `/api/tree` | Full tree state as JSON |
 | `GET` | `/api/events` | SSE stream (`{"version": N}`) |
-| `POST` | `/api/queue` | Queue an action |
-| `GET` | `/api/queue` | List queued actions |
-| `DELETE` | `/api/queue` | Clear queue |
+| `POST` | `/api/queue` | Set the pending action (replaces any existing) |
+| `GET` | `/api/queue` | Get the current pending action, or `null` |
+| `DELETE` | `/api/queue` | Clear the pending action |
 | `POST` | `/api/sync` | Trigger `/tree-ui-sync` in pi |
 | `POST` | `/api/shutdown` | Stop the HTTP server |
 

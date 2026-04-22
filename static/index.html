@@ -261,8 +261,8 @@
     <button onclick="setFilter('user')">User Only</button>
     <button onclick="setFilter('all')">All</button>
     <h3>Actions</h3>
-    <button class="btn-sync" onclick="triggerSync()">🔄 Sync Actions</button>
-    <button onclick="triggerClearQueue()">🗑 Clear Queue</button>
+    <button class="btn-sync" onclick="triggerSync()">🚀 Submit</button>
+    <button onclick="triggerClearQueue()">✕ Cancel</button>
     <button class="btn-stop" onclick="triggerShutdown()">✕ Stop Tree UI</button>
     <div class="legend">
       <span class="role-user">■ user</span>
@@ -287,6 +287,7 @@ let collapsed = new Set();
 let selectedId = null;
 let filter = 'all';
 let eventSource = null;
+let pendingAction = null;
 
 function connect() {
   if (eventSource) eventSource.close();
@@ -322,10 +323,16 @@ async function fetchTree() {
 async function updatePendingBadge() {
   try {
     const res = await fetch('/api/queue');
-    const queue = await res.json();
+    pendingAction = await res.json();
     const badge = document.getElementById('pendingBadge');
-    badge.textContent = `${queue.length} pending`;
-    badge.className = queue.length > 0 ? 'badge show' : 'badge';
+    if (pendingAction) {
+      badge.textContent = `${pendingAction.action} pending`;
+      badge.className = 'badge show';
+    } else {
+      badge.textContent = '';
+      badge.className = 'badge';
+    }
+    if (selectedId) renderDetails(selectedId);
   } catch {}
 }
 
@@ -457,6 +464,36 @@ function renderDetails(id) {
   const node = map.get(id);
   if (!node) return;
 
+  const hasPending = pendingAction !== null;
+  const isThisNodePending = hasPending && (pendingAction.targetId === id || !pendingAction.targetId);
+
+  let actionsHtml = '';
+  if (isThisNodePending) {
+    actionsHtml = `
+      <div class="detail-box" style="background:#fef3c7;border-color:#f59e0b;color:#92400e;margin-bottom:12px;">
+        <p><b>Pending:</b> ${escapeHtml(pendingAction.action)}${pendingAction.targetId ? ` on this entry` : ''}</p>
+        <p style="font-size:11px;">Click <b>🚀 Submit</b> to execute or <b>✕ Cancel</b> to clear.</p>
+      </div>
+    `;
+  } else if (hasPending) {
+    actionsHtml = `
+      <div class="detail-box" style="background:#fef3c7;border-color:#f59e0b;color:#92400e;margin-bottom:12px;">
+        <p>An action is pending on another entry.</p>
+        <p style="font-size:11px;">Submit or cancel it first.</p>
+      </div>
+    `;
+  } else {
+    actionsHtml = `
+      <div class="actions">
+        <button onclick="queueAction({action:'navigate',targetId:'${node.id}'})">↩ Navigate to here</button>
+        <button onclick="queueAction({action:'fork',targetId:'${node.id}'})">🔀 Fork from here</button>
+        <button onclick="queueAction({action:'compact'})">📝 Compact context</button>
+        <button onclick="promptLabel('${node.id}')">🏷 Set / clear label</button>
+        <button onclick="navigator.clipboard.writeText('${node.id}')">📋 Copy entry ID</button>
+      </div>
+    `;
+  }
+
   const panel = document.getElementById('detailPanel');
   panel.innerHTML = `
     <h3>Entry Details</h3>
@@ -472,15 +509,11 @@ function renderDetails(id) {
       <div class="content-preview">${escapeHtml(node.content)}</div>
     </div>
     <h3>Actions</h3>
-    <div class="actions">
-      <button onclick="queueAction({action:'navigate',targetId:'${node.id}'})">↩ Navigate to here</button>
-      <button onclick="queueAction({action:'fork',targetId:'${node.id}'})">🔀 Fork from here</button>
-      <button onclick="queueAction({action:'compact'})">📝 Compact context</button>
-      <button onclick="promptLabel('${node.id}')">🏷 Set / clear label</button>
-      <button onclick="navigator.clipboard.writeText('${node.id}')">📋 Copy entry ID</button>
-    </div>
+    ${actionsHtml}
     <div class="hint">
-      💡 Actions are queued. Click <b>🔄 Sync Actions</b> above or run <code>/tree-ui-sync</code> in pi to execute.
+      ${hasPending
+        ? '💡 An action is pending. Use the sidebar to Submit or Cancel.'
+        : '💡 Click an action above to prepare it, then use the sidebar to Submit.'}
     </div>
   `;
 }
@@ -495,7 +528,7 @@ async function queueAction(action) {
     const data = await res.json();
     updatePendingBadge();
     if (res.ok) {
-      showToast(`Queued: ${action.action}`);
+      showToast(`Action set: ${action.action}`);
     } else {
       showToast(`Error: ${data.error}`, 'error');
     }
@@ -509,8 +542,8 @@ async function triggerSync() {
     const res = await fetch('/api/sync', { method: 'POST' });
     const data = await res.json();
     if (res.ok) {
-      showToast('Sync triggered in pi');
-      // Poll immediately to reflect cleared queue
+      showToast('Action submitted to pi');
+      // Poll immediately to reflect cleared state
       await updatePendingBadge();
     } else {
       showToast(`Sync failed: ${data.error}`, 'error');
@@ -525,7 +558,7 @@ async function triggerClearQueue() {
     const res = await fetch('/api/queue', { method: 'DELETE' });
     const data = await res.json();
     if (res.ok) {
-      showToast('Queue cleared');
+      showToast('Action cancelled');
       await updatePendingBadge();
     } else {
       showToast(`Clear failed: ${data.error}`, 'error');

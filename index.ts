@@ -41,7 +41,7 @@ let treeState: TreeState = {
   nodes: [],
 };
 
-const actionQueue: QueuedAction[] = [];
+let pendingAction: QueuedAction | null = null;
 const sseClients: Set<ServerResponse> = new Set();
 let server: ReturnType<typeof createServer> | null = null;
 let globalCtx: ExtensionContext | null = null;
@@ -205,10 +205,10 @@ function startServer(port: number) {
           if (!validActions.includes(action.action)) {
             throw new Error(`Invalid action: ${action.action}. Must be one of: ${validActions.join(", ")}`);
           }
-          actionQueue.push(action);
-          console.log(`[pi-tree-ui] Queued action: ${action.action}, queue length: ${actionQueue.length}`);
+          pendingAction = action;
+          console.log(`[pi-tree-ui] Action set: ${action.action}`);
           res.writeHead(202, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ queued: true, count: actionQueue.length }));
+          res.end(JSON.stringify({ queued: true, action: action.action }));
         } catch (err) {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: (err as Error).message }));
@@ -219,12 +219,12 @@ function startServer(port: number) {
 
     if (url === "/api/queue" && method === "GET") {
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(actionQueue));
+      res.end(JSON.stringify(pendingAction));
       return;
     }
 
     if (url === "/api/queue" && method === "DELETE") {
-      actionQueue.length = 0;
+      pendingAction = null;
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ cleared: true }));
       return;
@@ -307,75 +307,74 @@ export default function (pi: ExtensionAPI) {
   const port = parseInt(process.env.PI_TREE_UI_PORT ?? "", 10) || parseInt((pi.getFlag("pi-tree-ui-port") as string | undefined) ?? "8765", 10);
 
   pi.registerCommand("tree-ui-sync", {
-    description: "Execute pending actions queued from the pi-tree-ui browser UI",
+    description: "Execute the pending action prepared in the pi-tree-ui browser UI",
     handler: async (_args, ctx) => {
-      console.log(`[tree-ui-sync] Queue length: ${actionQueue.length}`);
-      if (actionQueue.length === 0) {
-        ctx.ui.notify("No pending actions in queue", "info");
+      console.log(`[tree-ui-sync] Pending action: ${pendingAction?.action ?? "none"}`);
+      if (!pendingAction) {
+        ctx.ui.notify("No pending action", "info");
         return;
       }
 
+      const action = pendingAction;
+      pendingAction = null;
       const results: string[] = [];
 
-      while (actionQueue.length > 0) {
-        const action = actionQueue.shift()!;
-        console.log(`[tree-ui-sync] Processing: ${JSON.stringify(action)}`);
-        try {
-          switch (action.action) {
-            case "navigate": {
-              const result = await ctx.navigateTree(action.targetId, {
-                summarize: action.summarize ?? false,
-                customInstructions: action.customInstructions,
-              });
-              if (result.cancelled) {
-                results.push(`navigate ${action.targetId}: cancelled`);
-              } else {
-                results.push(`navigate ${action.targetId}: ok`);
-              }
-              break;
+      console.log(`[tree-ui-sync] Processing: ${JSON.stringify(action)}`);
+      try {
+        switch (action.action) {
+          case "navigate": {
+            const result = await ctx.navigateTree(action.targetId, {
+              summarize: action.summarize ?? false,
+              customInstructions: action.customInstructions,
+            });
+            if (result.cancelled) {
+              results.push(`navigate ${action.targetId}: cancelled`);
+            } else {
+              results.push(`navigate ${action.targetId}: ok`);
             }
-            case "fork": {
-              const result = await ctx.fork(action.targetId, {
-                position: action.position ?? "before",
-              });
-              if (result.cancelled) {
-                results.push(`fork ${action.targetId}: cancelled`);
-              } else {
-                results.push(`fork ${action.targetId}: ok`);
-              }
-              break;
-            }
-            case "label": {
-              pi.setLabel(action.targetId, action.label);
-              results.push(`label ${action.targetId}: ${action.label ?? "cleared"}`);
-              break;
-            }
-            case "compact": {
-              ctx.compact({
-                customInstructions: action.customInstructions,
-                onComplete: () => {
-                  ctx.ui.notify("Compaction complete", "success");
-                },
-                onError: (err) => {
-                  ctx.ui.notify(`Compaction failed: ${err.message}`, "error");
-                },
-              });
-              results.push("compact: queued");
-              break;
-            }
-            default: {
-              results.push(`unknown action: ${(action as any).action}`);
-              break;
-            }
+            break;
           }
-        } catch (err) {
-          results.push(`${action.action}: error - ${(err as Error).message}`);
-          console.error(`[tree-ui-sync] Error processing action:`, err);
+          case "fork": {
+            const result = await ctx.fork(action.targetId, {
+              position: action.position ?? "before",
+            });
+            if (result.cancelled) {
+              results.push(`fork ${action.targetId}: cancelled`);
+            } else {
+              results.push(`fork ${action.targetId}: ok`);
+            }
+            break;
+          }
+          case "label": {
+            pi.setLabel(action.targetId, action.label);
+            results.push(`label ${action.targetId}: ${action.label ?? "cleared"}`);
+            break;
+          }
+          case "compact": {
+            ctx.compact({
+              customInstructions: action.customInstructions,
+              onComplete: () => {
+                ctx.ui.notify("Compaction complete", "success");
+              },
+              onError: (err) => {
+                ctx.ui.notify(`Compaction failed: ${err.message}`, "error");
+              },
+            });
+            results.push("compact: queued");
+            break;
+          }
+          default: {
+            results.push(`unknown action: ${(action as any).action}`);
+            break;
+          }
         }
-        console.log(`[tree-ui-sync] Remaining: ${actionQueue.length}`);
+      } catch (err) {
+        results.push(`${action.action}: error - ${(err as Error).message}`);
+        console.error(`[tree-ui-sync] Error processing action:`, err);
       }
 
-      ctx.ui.notify(`Processed ${results.length} action(s)`, "success");
+      const hasError = results.some(r => r.includes("error"));
+      ctx.ui.notify(`Action ${action.action} ${hasError ? "failed" : "completed"}`, hasError ? "error" : "success");
       for (const r of results) {
         ctx.ui.notify(r, "info");
       }
