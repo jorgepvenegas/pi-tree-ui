@@ -182,19 +182,24 @@
     cursor: pointer;
     text-align: left;
   }
-  .detail-float .global-actions button:hover { background: #30363d; }
+  .detail-float .global-actions button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    filter: grayscale(0.6);
+  }
+  .detail-float .global-actions button:hover:not(:disabled) { background: #30363d; }
   .detail-float .global-actions .btn-sync {
     background: #1f6feb;
     border-color: #1f6feb;
     color: #fff;
   }
-  .detail-float .global-actions .btn-sync:hover { background: #388bfd; }
+  .detail-float .global-actions .btn-sync:hover:not(:disabled) { background: #388bfd; }
   .detail-float .global-actions .btn-stop {
     background: #da3633;
     border-color: #da3633;
     color: #fff;
   }
-  .detail-float .global-actions .btn-stop:hover { background: #f85149; }
+  .detail-float .global-actions .btn-stop:hover:not(:disabled) { background: #f85149; }
   .detail-float .hint {
     margin-top: 10px;
     padding: 8px;
@@ -371,13 +376,13 @@ async function updatePendingBadge() {
     pendingAction = await res.json();
     const badge = document.getElementById('pendingBadge');
     const hasPending = pendingAction !== null;
-    // Show badge when idle, hide when pending
+    // Only show badge when an action is pending
     if (hasPending) {
+      badge.textContent = pendingAction.action;
+      badge.className = 'badge show';
+    } else {
       badge.textContent = '';
       badge.className = 'badge';
-    } else {
-      badge.textContent = 'idle';
-      badge.className = 'badge show';
     }
     if (selectedId) renderDetails(selectedId);
   } catch {}
