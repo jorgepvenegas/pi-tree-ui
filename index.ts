@@ -66,6 +66,7 @@ let treeState: TreeState = {
 
 let pendingAction: QueuedAction | null = null;
 const sseClients: Set<ServerResponse> = new Set();
+const fullContentMap = new Map<string, string>();
 let server: ReturnType<typeof createServer> | null = null;
 let globalCmdCtx: ExtensionCommandContext | null = null;
 let globalPi: ExtensionAPI | null = null;
@@ -187,6 +188,7 @@ function updateTreeState(ctx: ExtensionContext) {
       content = `[session name] ${entry.name ?? ""}`;
     }
 
+    fullContentMap.set(entry.id, content);
     nodeMap.set(entry.id, {
       id: entry.id,
       parentId: entry.parentId,
@@ -341,6 +343,19 @@ function startServer(port: number) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ stopped: true }));
       stopServer();
+      return;
+    }
+
+    if (url.startsWith("/api/entry/") && method === "GET") {
+      const id = url.slice("/api/entry/".length);
+      const node = treeState.nodes.find(n => n.id === id);
+      if (node) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ...node, fullContent: fullContentMap.get(id) ?? node.content }));
+      } else {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Entry not found" }));
+      }
       return;
     }
 
