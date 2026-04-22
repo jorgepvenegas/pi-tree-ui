@@ -231,7 +231,7 @@ function updateTreeState(ctx: ExtensionContext) {
 function startServer(port: number) {
   if (server) return;
 
-  server = createServer((req: IncomingMessage, res: ServerResponse) => {
+  server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
     const url = req.url ?? "/";
     const method = req.method ?? "GET";
 
