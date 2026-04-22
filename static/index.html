@@ -42,35 +42,8 @@
     flex: 1;
     overflow: hidden;
   }
-  .tree-panel {
-    position: relative;
-    flex: 1;
-    padding: 12px;
-    overflow: auto;
-    font-family: monospace;
-    font-size: 13px;
-    line-height: 1.6;
-  }
-  .tree-toolbar {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    display: flex;
-    gap: 4px;
-    z-index: 10;
-  }
-  .tree-toolbar button {
-    background: #21262d;
-    border: 1px solid #30363d;
-    color: #c9d1d9;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    cursor: pointer;
-  }
-  .tree-toolbar button:hover { background: #30363d; }
   .sidebar {
-    width: 160px;
+    width: 180px;
     padding: 12px;
     background: #161b22;
     border-right: 1px solid #30363d;
@@ -116,23 +89,13 @@
     color: #8b949e;
   }
   .sidebar .legend span { display: block; margin-bottom: 2px; }
-  .detail-panel {
-    position: absolute;
-    top: 44px;
-    right: 8px;
-    width: 420px;
-    max-height: calc(100% - 52px);
-    background: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 6px;
+  .tree-panel {
+    flex: 1;
     padding: 12px;
     overflow: auto;
-    z-index: 20;
-  }
-    border-top: 1px solid #30363d;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
+    font-family: monospace;
+    font-size: 13px;
+    line-height: 1.6;
   }
   .tree-panel ul { list-style: none; padding-left: 0; }
   .tree-panel li { position: relative; }
@@ -169,6 +132,14 @@
   .active-marker {
     color: #58a6ff;
     font-weight: bold;
+  }
+  .detail-panel {
+    width: 340px;
+    padding: 12px;
+    background: #161b22;
+    border-left: 1px solid #30363d;
+    overflow: auto;
+    flex-shrink: 0;
   }
   .detail-panel h3 {
     font-size: 13px;
@@ -284,6 +255,11 @@
 <div id="toast-container"></div>
 <div class="main">
   <div class="sidebar" id="sidebar">
+    <h3>View</h3>
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+    <button onclick="setFilter('user')">User Only</button>
+    <button onclick="setFilter('all')">All</button>
     <h3>Actions</h3>
     <button class="btn-sync" onclick="triggerSync()">🚀 Submit</button>
     <button onclick="triggerClearQueue()">✕ Cancel</button>
@@ -298,18 +274,10 @@
     </div>
   </div>
   <div class="tree-panel" id="treePanel">
-    <div class="tree-toolbar">
-      <button onclick="expandAll()">Expand All</button>
-      <button onclick="collapseAll()">Collapse All</button>
-      <button onclick="setFilter('user')">User Only</button>
-      <button onclick="setFilter('all')">All</button>
-    </div>
-    <div class="detail-panel" id="detailPanel">
-      <div class="empty-state">Select an entry to view details</div>
-    </div>
-    <div id="treeContent">
-      <div class="empty-state">Loading session tree...</div>
-    </div>
+    <div class="empty-state">Loading session tree...</div>
+  </div>
+  <div class="detail-panel" id="detailPanel">
+    <div class="empty-state">Select an entry to view details</div>
   </div>
 </div>
 
@@ -462,16 +430,16 @@ function renderNode(node, map, depth, isLast, prefix, visibleIds) {
 
 function renderTree() {
   expandActivePath();
-  const content = document.getElementById('treeContent');
+  const panel = document.getElementById('treePanel');
   const map = getNodeMap();
   const visibleIds = computeVisibleIds(map);
   const roots = getRootNodes().filter(n => visibleIds.has(n.id));
 
   if (roots.length === 0) {
     if (treeState.nodes.length === 0) {
-      content.innerHTML = '<div class="empty-state">No session entries yet</div>';
+      panel.innerHTML = '<div class="empty-state">No session entries yet</div>';
     } else {
-      content.innerHTML = '<div class="empty-state">No user messages match this filter</div>';
+      panel.innerHTML = '<div class="empty-state">No user messages match this filter</div>';
     }
     return;
   }
@@ -482,7 +450,7 @@ function renderTree() {
   }
   html += '</ul>';
 
-  content.innerHTML = html;
+  panel.innerHTML = html;
 }
 
 function selectNode(id) {
@@ -544,8 +512,8 @@ function renderDetails(id) {
     ${actionsHtml}
     <div class="hint">
       ${hasPending
-        ? '💡 Click <b>🚀 Submit</b> in the sidebar to execute this action, or <b>✕ Cancel</b> to clear it.'
-        : '💡 Click an action above to prepare it, then click <b>🚀 Submit</b> in the sidebar to execute.'}
+        ? '💡 Click <b>🚀 Submit</b> to execute this action, or <b>✕ Cancel</b> to clear it.'
+        : '💡 Click an action above to prepare it, then click <b>🚀 Submit</b> to execute.'}
     </div>
   `;
 }
