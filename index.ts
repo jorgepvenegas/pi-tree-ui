@@ -167,23 +167,23 @@ function updateTreeState(ctx: ExtensionContext) {
         model = `${msg.provider}/${msg.model}`;
       }
     } else if (entry.type === "compaction") {
-      content = `[compaction: ${entry.tokensBefore} tokens] ${entry.summary.slice(0, 80)}`;
+      content = `${entry.tokensBefore} tokens — ${entry.summary}`;
     } else if (entry.type === "branch_summary") {
-      content = `[branch summary] ${entry.summary.slice(0, 80)}`;
+      content = entry.summary;
     } else if (entry.type === "custom") {
       customType = entry.customType;
-      content = `[custom: ${entry.customType}] ${JSON.stringify(entry.data).slice(0, 80)}`;
+      content = JSON.stringify(entry.data);
     } else if (entry.type === "custom_message") {
       customType = entry.customType;
       content = typeof entry.content === "string" ? entry.content : JSON.stringify(entry.content);
     } else if (entry.type === "label") {
-      content = `[label: ${entry.label ?? "(cleared)"}] on ${entry.targetId}`;
+      content = `${entry.label ?? "(cleared)"} on ${entry.targetId}`;
     } else if (entry.type === "model_change") {
-      content = `[model change] ${entry.provider}/${entry.modelId}`;
+      content = `${entry.provider}/${entry.modelId}`;
     } else if (entry.type === "thinking_level_change") {
-      content = `[thinking level] ${entry.thinkingLevel}`;
+      content = String(entry.thinkingLevel);
     } else if (entry.type === "session_info") {
-      content = `[session name] ${entry.name ?? ""}`;
+      content = entry.name ?? "";
     }
 
     fullContentMap.set(entry.id, content);
