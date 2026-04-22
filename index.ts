@@ -252,24 +252,6 @@ function startServer(port: number) {
       return;
     }
 
-    if (url === "/api/sync" && method === "POST") {
-      try {
-        if (!globalPi) throw new Error("Extension not initialized");
-        const isIdle = globalCtx?.isIdle?.() ?? true;
-        if (isIdle) {
-          globalPi.sendUserMessage("/tree-ui-sync");
-        } else {
-          globalPi.sendUserMessage("/tree-ui-sync", { deliverAs: "followUp" });
-        }
-        res.writeHead(202, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ triggered: true }));
-      } catch (err) {
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: (err as Error).message }));
-      }
-      return;
-    }
-
     if (url === "/api/shutdown" && method === "POST") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ stopped: true }));

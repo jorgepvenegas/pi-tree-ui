@@ -79,17 +79,15 @@ If the port is in use, it automatically tries the next 10 ports.
 | **🏷 Set / clear label** | Bookmark an entry with a custom label |
 | **📋 Copy entry ID** | Copy the entry UUID to clipboard |
 
-A single action is **prepared** in the browser. Once set, the UI shows the pending action and disables other actions until you either **Submit** or **Cancel**.
+A single action is **prepared** in the browser. Once set, the UI shows the pending action and disables other actions until you either execute it or **Cancel**.
 
-### Submit the pending action
+### Execute the pending action
 
 ```
 /tree-ui-sync
 ```
 
-This executes the prepared action through pi's `ExtensionCommandContext`.
-
-You can also click **🚀 Submit** in the browser sidebar.
+This executes the prepared action through pi's `ExtensionCommandContext`. The browser's **🚀 Submit** button reminds you to run this command.
 
 ## Keyboard Shortcuts
 
@@ -99,7 +97,7 @@ The web UI supports standard mouse interaction:
 - **Click ⊟/⊞** — Expand or collapse a branch
 - **Expand All / Collapse All** — Sidebar buttons
 - **User Only / All** — Filter the tree view
-- **🚀 Submit** — Execute the prepared action in pi
+- **🚀 Submit** — Reminder to run `/tree-ui-sync` in pi
 - **✕ Cancel** — Clear the prepared action
 
 ## Architecture
@@ -125,7 +123,7 @@ The web UI supports standard mouse interaction:
 3. Version is incremented and broadcast via SSE to all connected browsers
 4. Browser re-fetches `/api/tree` and re-renders
 5. Browser POSTs a single action to `/api/queue`
-6. User clicks **🚀 Submit** (or runs `/tree-ui-sync` in pi) to execute the prepared action safely
+6. User runs `/tree-ui-sync` in pi to execute the prepared action safely
 
 ## HTTP API
 
@@ -137,7 +135,6 @@ The web UI supports standard mouse interaction:
 | `POST` | `/api/queue` | Set the pending action (replaces any existing) |
 | `GET` | `/api/queue` | Get the current pending action, or `null` |
 | `DELETE` | `/api/queue` | Clear the pending action |
-| `POST` | `/api/sync` | Trigger `/tree-ui-sync` in pi |
 | `POST` | `/api/shutdown` | Stop the HTTP server |
 
 ### Action format
