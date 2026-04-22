@@ -69,6 +69,53 @@
     cursor: pointer;
   }
   .tree-toolbar button:hover { background: #30363d; }
+  .sidebar {
+    width: 160px;
+    padding: 12px;
+    background: #161b22;
+    border-right: 1px solid #30363d;
+    overflow: auto;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sidebar h3 {
+    font-size: 11px;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .sidebar button {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .sidebar button:hover { background: #30363d; }
+  .sidebar .btn-sync {
+    background: #1f6feb;
+    border-color: #1f6feb;
+    color: #fff;
+  }
+  .sidebar .btn-sync:hover { background: #388bfd; }
+  .sidebar .btn-stop {
+    background: #da3633;
+    border-color: #da3633;
+    color: #fff;
+  }
+  .sidebar .btn-stop:hover { background: #f85149; }
+  .sidebar .legend {
+    margin-top: auto;
+    font-size: 11px;
+    color: #8b949e;
+  }
+  .sidebar .legend span { display: block; margin-bottom: 2px; }
   .detail-panel {
     position: absolute;
     top: 44px;
@@ -82,42 +129,11 @@
     overflow: auto;
     z-index: 20;
   }
-  .detail-panel .global-actions {
-    padding-top: 12px;
     border-top: 1px solid #30363d;
     display: flex;
     flex-direction: column;
     gap: 6px;
   }
-  .detail-panel .global-actions button {
-    background: #21262d;
-    border: 1px solid #30363d;
-    color: #c9d1d9;
-    padding: 6px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    cursor: pointer;
-    text-align: left;
-  }
-  .detail-panel .global-actions button:hover { background: #30363d; }
-  .detail-panel .global-actions .btn-sync {
-    background: #1f6feb;
-    border-color: #1f6feb;
-    color: #fff;
-  }
-  .detail-panel .global-actions .btn-sync:hover { background: #388bfd; }
-  .detail-panel .global-actions .btn-stop {
-    background: #da3633;
-    border-color: #da3633;
-    color: #fff;
-  }
-  .detail-panel .global-actions .btn-stop:hover { background: #f85149; }
-  .detail-panel .legend {
-    margin-top: 12px;
-    font-size: 11px;
-    color: #8b949e;
-  }
-  .detail-panel .legend span { display: block; margin-bottom: 2px; }
   .tree-panel ul { list-style: none; padding-left: 0; }
   .tree-panel li { position: relative; }
   .tree-panel li .line {
@@ -267,6 +283,20 @@
 </header>
 <div id="toast-container"></div>
 <div class="main">
+  <div class="sidebar" id="sidebar">
+    <h3>Actions</h3>
+    <button class="btn-sync" onclick="triggerSync()">🚀 Submit</button>
+    <button onclick="triggerClearQueue()">✕ Cancel</button>
+    <button class="btn-stop" onclick="triggerShutdown()">✕ Stop Tree UI</button>
+    <div class="legend">
+      <span class="role-user">■ user</span>
+      <span class="role-assistant">■ assistant</span>
+      <span class="role-toolResult">■ tool</span>
+      <span class="role-branchSummary">■ compaction</span>
+      <span class="role-custom">■ label</span>
+      <span class="active-marker">● active</span>
+    </div>
+  </div>
   <div class="tree-panel" id="treePanel">
     <div class="tree-toolbar">
       <button onclick="expandAll()">Expand All</button>
@@ -514,21 +544,8 @@ function renderDetails(id) {
     ${actionsHtml}
     <div class="hint">
       ${hasPending
-        ? '💡 Click <b>🚀 Submit</b> to execute this action, or <b>✕ Cancel</b> to clear it.'
-        : '💡 Click an action above to prepare it, then click <b>🚀 Submit</b> to execute.'}
-    </div>
-    <div class="global-actions">
-      <button class="btn-sync" onclick="triggerSync()">🚀 Submit</button>
-      <button onclick="triggerClearQueue()">✕ Cancel</button>
-      <button class="btn-stop" onclick="triggerShutdown()">✕ Stop Tree UI</button>
-      <div class="legend">
-        <span class="role-user">■ user</span>
-        <span class="role-assistant">■ assistant</span>
-        <span class="role-toolResult">■ tool</span>
-        <span class="role-branchSummary">■ compaction</span>
-        <span class="role-custom">■ label</span>
-        <span class="active-marker">● active</span>
-      </div>
+        ? '💡 Click <b>🚀 Submit</b> in the sidebar to execute this action, or <b>✕ Cancel</b> to clear it.'
+        : '💡 Click an action above to prepare it, then click <b>🚀 Submit</b> in the sidebar to execute.'}
     </div>
   `;
 }
