@@ -3,7 +3,7 @@
 A **pi extension** that serves an interactive web-based session tree explorer on `localhost`. Visualize your conversation history, navigate branches, fork sessions, set labels, and compact context — all from the browser.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/jorgepvenegas/tree-web/main/screenshot.png" alt="tree-web screenshot" width="720">
+  <img src="https://raw.githubusercontent.com/jorgepvenegas/pi-tree-ui/main/screenshot.png" alt="pi-tree-ui screenshot" width="720">
 </p>
 
 > **Zero npm dependencies.** Built entirely with Node.js built-ins and vanilla JavaScript.
@@ -23,7 +23,7 @@ A **pi extension** that serves an interactive web-based session tree explorer on
 Clone or copy the extension into your pi extensions directory:
 
 ```bash
-git clone https://github.com/jorgepvenegas/tree-web.git ~/.pi/agent/extensions/tree-web
+git clone https://github.com/jorgepvenegas/pi-tree-ui.git ~/.pi/agent/extensions/tree-web
 ```
 
 Or copy the files manually to `~/.pi/agent/extensions/tree-web/`:
