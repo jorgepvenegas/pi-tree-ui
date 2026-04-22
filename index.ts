@@ -16,11 +16,9 @@ function resolveStaticHtml(): string {
 
   for (const candidate of candidates) {
     try {
-      const html = readFileSync(candidate, "utf8");
-      console.log(`[pi-tree-ui] Serving static HTML from: ${candidate}`);
-      return html;
-    } catch (err) {
-      console.log(`[pi-tree-ui] Static file not found at: ${candidate}`);
+      return readFileSync(candidate, "utf8");
+    } catch {
+      // try next candidate
     }
   }
 
