@@ -70,17 +70,19 @@
   }
   .tree-toolbar button:hover { background: #30363d; }
   .detail-panel {
-    width: 510px;
-    padding: 12px;
+    position: absolute;
+    top: 44px;
+    right: 8px;
+    width: 420px;
+    max-height: calc(100% - 52px);
     background: #161b22;
-    border-right: 1px solid #30363d;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 12px;
     overflow: auto;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
+    z-index: 20;
   }
   .detail-panel .global-actions {
-    margin-top: auto;
     padding-top: 12px;
     border-top: 1px solid #30363d;
     display: flex;
@@ -265,9 +267,6 @@
 </header>
 <div id="toast-container"></div>
 <div class="main">
-  <div class="detail-panel" id="detailPanel">
-    <div class="empty-state">Select an entry to view details</div>
-  </div>
   <div class="tree-panel" id="treePanel">
     <div class="tree-toolbar">
       <button onclick="expandAll()">Expand All</button>
@@ -275,7 +274,12 @@
       <button onclick="setFilter('user')">User Only</button>
       <button onclick="setFilter('all')">All</button>
     </div>
-    <div class="empty-state">Loading session tree...</div>
+    <div class="detail-panel" id="detailPanel">
+      <div class="empty-state">Select an entry to view details</div>
+    </div>
+    <div id="treeContent">
+      <div class="empty-state">Loading session tree...</div>
+    </div>
   </div>
 </div>
 
@@ -428,16 +432,16 @@ function renderNode(node, map, depth, isLast, prefix, visibleIds) {
 
 function renderTree() {
   expandActivePath();
-  const panel = document.getElementById('treePanel');
+  const content = document.getElementById('treeContent');
   const map = getNodeMap();
   const visibleIds = computeVisibleIds(map);
   const roots = getRootNodes().filter(n => visibleIds.has(n.id));
 
   if (roots.length === 0) {
     if (treeState.nodes.length === 0) {
-      panel.innerHTML = '<div class="empty-state">No session entries yet</div>';
+      content.innerHTML = '<div class="empty-state">No session entries yet</div>';
     } else {
-      panel.innerHTML = '<div class="empty-state">No user messages match this filter</div>';
+      content.innerHTML = '<div class="empty-state">No user messages match this filter</div>';
     }
     return;
   }
@@ -448,7 +452,7 @@ function renderTree() {
   }
   html += '</ul>';
 
-  panel.innerHTML = html;
+  content.innerHTML = html;
 }
 
 function selectNode(id) {
