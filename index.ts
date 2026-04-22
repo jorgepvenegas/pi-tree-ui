@@ -411,9 +411,7 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("session_start", async (_event, ctx) => {
-    globalPi = pi;
     updateTreeState(ctx);
-    startServer(port);
   });
 
   pi.on("message_start", async (_event, ctx) => {

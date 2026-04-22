@@ -40,7 +40,7 @@ pi-tree-ui/
 
 ### Start the server
 
-The server auto-starts when a pi session begins. To start it manually or get the URL:
+Run the `/tree-ui` command to start the server and get the URL:
 
 ```
 /tree-ui
@@ -51,7 +51,7 @@ Output:
 [pi-tree-ui] Server running at http://127.0.0.1:8765
 ```
 
-Open the URL in your browser.
+Open the URL in your browser. Actions require the command context established by `/tree-ui`, so this step is required once per session.
 
 ### Port configuration
 
