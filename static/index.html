@@ -69,11 +69,8 @@
   .tree-panel li .line.selected { background: #2a2e3f; }
   .tree-panel .toggle {
     cursor: pointer;
-    width: 18px;
-    text-align: center;
     color: #565f89;
     user-select: none;
-    font-size: 15px;
   }
   /* Role prefixes — terminal-style colored labels */
   .role-prefix { font-weight: 600; margin-right: 2px; }
@@ -441,20 +438,28 @@ function renderNode(node, map, depth, isLast, prefix, visibleIds) {
   const onActive = isOnActivePath(node.id, map);
   const isSelected = node.id === selectedId;
 
-  let toggle = '';
-  if (hasChildren) {
-    toggle = isCollapsed ? '⊞' : '⊟';
+  // Build the left-side tree connector string.
+  // Each depth level consumes exactly 3 characters so │ lines align vertically.
+  let connector = prefix;
+
+  if (depth > 0) {
+    connector += isLast ? '└─' : '├─';
   }
 
-  let connector = '';
-  if (depth > 0) {
-    connector = prefix + (isLast ? '└─ ' : '├─ ');
+  // Toggle is embedded into the connector text (replaces the trailing space)
+  // so tree lines stay perfectly aligned in monospace.
+  if (hasChildren) {
+    const t = isCollapsed ? '⊞' : '⊟';
+    connector += `<span class="toggle" onclick="event.stopPropagation();toggleCollapse('${node.id}')">${t}</span> `;
+  } else {
+    // Leaf: pad to same width as branch+toggle (3 chars total for depth>0, 2 for root)
+    connector += depth > 0 ? '  ' : '   ';
   }
 
   let activeMarker = onActive ? '<span class="active-marker">●</span> ' : '';
   let labelTag = node.label ? `<span class="label-tag">[${escapeHtml(node.label)}]</span>` : '';
 
-  // Build terminal-style prefix + content
+  // Build terminal-style role prefix + content
   let prefixHtml = '';
   let contentClass = 'node-content';
 
@@ -494,12 +499,7 @@ function renderNode(node, map, depth, isLast, prefix, visibleIds) {
   const lines = [];
   lines.push(`<li>`);
   lines.push(`<div class="line ${isSelected ? 'selected' : ''}" data-id="${node.id}" onclick="selectNode('${node.id}')">`);
-  if (toggle) {
-    lines.push(`<span class="toggle" onclick="event.stopPropagation();toggleCollapse('${node.id}')">${toggle}</span>`);
-  } else {
-    lines.push(`<span style="width:14px;display:inline-block;"></span>`);
-  }
-  lines.push(`<span style="padding-left:${depth > 0 ? 0 : 4}px;"><span class="tree-connector">${connector}</span>${activeMarker}${prefixHtml}<span class="${contentClass}">${displayContent}</span>${labelTag}</span>`);
+  lines.push(`<span class="tree-connector">${connector}</span>${activeMarker}${prefixHtml}<span class="${contentClass}">${displayContent}</span>${labelTag}`);
   lines.push(`</div>`);
 
   if (hasChildren && !isCollapsed) {
@@ -509,7 +509,8 @@ function renderNode(node, map, depth, isLast, prefix, visibleIds) {
       .filter(c => c && visibleIds.has(c.id));
     for (let i = 0; i < visibleChildren.length; i++) {
       const child = visibleChildren[i];
-      const childPrefix = depth > 0 ? (isLast ? '   ' : '│  ') : '';
+      // Always pass ancestor prefix so vertical lines draw for all depths
+      const childPrefix = isLast ? '   ' : '│  ';
       lines.push(renderNode(child, map, depth + 1, i === visibleChildren.length - 1, prefix + childPrefix, visibleIds));
     }
     lines.push(`</ul>`);
