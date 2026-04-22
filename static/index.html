@@ -7,31 +7,32 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
-    background: #0d1117;
-    color: #c9d1d9;
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+    background: #1e1e2e;
+    color: #abb2bf;
     height: 100vh;
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
   header {
-    background: #161b22;
-    border-bottom: 1px solid #30363d;
-    padding: 8px 16px;
+    background: #181825;
+    border-bottom: 1px solid #313244;
+    padding: 6px 16px;
     display: flex;
     align-items: center;
     gap: 12px;
     flex-shrink: 0;
   }
-  header h1 { font-size: 14px; color: #58a6ff; }
-  header .status { font-size: 11px; color: #8b949e; margin-left: auto; }
-  header .status.connected { color: #3fb950; }
-  header .status.disconnected { color: #f85149; }
+  header h1 { font-size: 13px; color: #7aa2f7; font-weight: 600; }
+  header .status { font-size: 11px; color: #565f89; margin-left: auto; }
+  header .status.connected { color: #9ece6a; }
+  header .status.disconnected { color: #f7768e; }
   header .badge {
-    background: #1f6feb;
-    color: #fff;
+    background: #7aa2f7;
+    color: #1e1e2e;
     font-size: 11px;
+    font-weight: 600;
     padding: 2px 8px;
     border-radius: 10px;
     display: none;
@@ -46,12 +47,12 @@
   .tree-panel {
     position: relative;
     flex: 1;
-    padding: 12px;
-    padding-top: 40px;
+    padding: 8px 12px;
+    padding-top: 36px;
     overflow: auto;
-    font-family: monospace;
-    font-size: 13px;
-    line-height: 1.6;
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.5;
   }
   .tree-panel ul { list-style: none; padding-left: 0; }
   .tree-panel li { position: relative; }
@@ -59,63 +60,68 @@
     display: flex;
     align-items: center;
     gap: 4px;
-    padding: 1px 4px;
-    border-radius: 3px;
+    padding: 0px 4px;
+    border-radius: 2px;
     cursor: pointer;
     white-space: nowrap;
   }
-  .tree-panel li .line:hover { background: #21262d; }
-  .tree-panel li .line.selected { background: #1f6feb33; outline: 1px solid #1f6feb; }
+  .tree-panel li .line:hover { background: #2a2e3f; }
+  .tree-panel li .line.selected { background: #2a2e3f; }
   .tree-panel .toggle {
     cursor: pointer;
-    width: 16px;
+    width: 14px;
     text-align: center;
-    color: #8b949e;
+    color: #565f89;
     user-select: none;
+    font-size: 11px;
   }
-  .role-user { color: #7ee787; }
-  .role-assistant { color: #79c0ff; }
-  .role-toolResult { color: #f85149; }
-  .role-bashExecution { color: #f85149; }
-  .role-branchSummary { color: #d2a8ff; }
-  .role-compactionSummary { color: #d2a8ff; }
-  .role-custom { color: #ffa657; }
+  /* Role prefixes — terminal-style colored labels */
+  .role-prefix { font-weight: 600; margin-right: 2px; }
+  .role-prefix-user { color: #abb2bf; }
+  .role-prefix-assistant { color: #e5c07b; }
+  .role-prefix-tool { color: #5c6370; }
+  .role-prefix-branch { color: #c678dd; }
+  .role-prefix-label { color: #d19a66; }
+  .node-content { color: #abb2bf; }
+  .node-content-muted { color: #5c6370; }
+  .tree-connector { color: #3e4451; }
   .tree-panel .label-tag {
-    color: #ffa657;
+    color: #d19a66;
     font-size: 11px;
     margin-left: 4px;
   }
   .active-marker {
-    color: #58a6ff;
-    font-weight: bold;
+    color: #7aa2f7;
+    font-size: 10px;
   }
   .tree-toolbar {
     position: absolute;
-    top: 8px;
+    top: 6px;
     left: 8px;
     display: flex;
     gap: 4px;
     z-index: 10;
   }
   .tree-toolbar button {
-    background: #21262d;
-    border: 1px solid #30363d;
-    color: #c9d1d9;
-    padding: 4px 8px;
+    background: #181825;
+    border: 1px solid #313244;
+    color: #565f89;
+    padding: 3px 8px;
     border-radius: 4px;
     font-size: 11px;
     cursor: pointer;
+    font-family: inherit;
   }
-  .tree-toolbar button:hover { background: #30363d; }
+  .tree-toolbar button:hover { background: #2a2e3f; color: #abb2bf; }
   .detail-float {
     position: absolute;
-    top: 36px;
+    top: 32px;
     right: 8px;
     width: 380px;
-    max-height: calc(100vh - 100px);
+    max-height: calc(100vh - 80px);
     overflow: auto;
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: #181825;
+    border: 1px solid #313244;
     border-radius: 8px;
     padding: 12px;
     z-index: 20;
@@ -123,16 +129,17 @@
   }
   .detail-float h3 {
     font-size: 13px;
-    color: #c9d1d9;
+    color: #a9b1d6;
     margin-bottom: 10px;
+    font-weight: 600;
   }
   .detail-box {
-    background: #dbeafe;
-    border: 1px solid #93c5fd;
+    background: #242436;
+    border: 1px solid #313244;
     border-radius: 6px;
     padding: 10px;
     font-size: 12px;
-    color: #1e3a5f;
+    color: #abb2bf;
     margin-bottom: 12px;
     word-break: break-word;
   }
@@ -140,7 +147,7 @@
   .detail-box hr { border-color: #93c5fd; margin: 6px 0; }
   .detail-box .content-preview {
     white-space: pre-wrap;
-    color: #374151;
+    color: #a9b1d6;
     max-height: 200px;
     overflow: auto;
   }
@@ -150,18 +157,18 @@
     gap: 6px;
   }
   .detail-float .actions button {
-    background: #21262d;
-    border: 1px solid #30363d;
-    color: #c9d1d9;
+    background: #242436;
+    border: 1px solid #313244;
+    color: #a9b1d6;
     padding: 6px 10px;
     border-radius: 4px;
     font-size: 12px;
     cursor: pointer;
     text-align: left;
   }
-  .detail-float .actions button:hover { background: #30363d; }
+  .detail-float .actions button:hover { background: #2a2e3f; }
   .detail-float .actions button:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
   }
   .detail-float .global-actions {
@@ -173,9 +180,9 @@
     gap: 6px;
   }
   .detail-float .global-actions button {
-    background: #21262d;
-    border: 1px solid #30363d;
-    color: #c9d1d9;
+    background: #242436;
+    border: 1px solid #313244;
+    color: #a9b1d6;
     padding: 6px 10px;
     border-radius: 4px;
     font-size: 12px;
@@ -203,16 +210,16 @@
   .detail-float .hint {
     margin-top: 10px;
     padding: 8px;
-    background: #1f6feb22;
-    border: 1px solid #1f6feb;
+    background: #1a1b2e;
+    border: 1px solid #313244;
     border-radius: 6px;
     font-size: 11px;
-    color: #58a6ff;
+    color: #7aa2f7;
   }
   .detail-float .legend {
     margin-top: 12px;
     font-size: 11px;
-    color: #8b949e;
+    color: #565f89;
   }
   .detail-float .legend span { display: block; margin-bottom: 2px; }
   .empty-state {
@@ -220,7 +227,7 @@
     align-items: center;
     justify-content: center;
     height: 100%;
-    color: #8b949e;
+    color: #565f89;
     font-size: 13px;
   }
   .modal-overlay {
@@ -233,8 +240,8 @@
     z-index: 1000;
   }
   .modal {
-    background: #161b22;
-    border: 1px solid #30363d;
+    background: #181825;
+    border: 1px solid #313244;
     border-radius: 8px;
     width: 80%;
     max-width: 900px;
@@ -262,9 +269,9 @@
     flex: 1;
     padding: 16px;
     overflow: auto;
-    font-family: monospace;
-    font-size: 13px;
-    color: #c9d1d9;
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
+    font-size: 12px;
+    color: #abb2bf;
     white-space: pre-wrap;
     word-break: break-word;
   }
@@ -279,9 +286,9 @@
     pointer-events: none;
   }
   .toast {
-    background: #161b22;
-    border: 1px solid #30363d;
-    color: #c9d1d9;
+    background: #181825;
+    border: 1px solid #313244;
+    color: #a9b1d6;
     padding: 10px 14px;
     border-radius: 6px;
     font-size: 12px;
@@ -298,12 +305,12 @@
     transform: translateY(0);
   }
   .toast.toast-error {
-    border-color: #da3633;
-    color: #f85149;
+    border-color: #f7768e;
+    color: #f7768e;
   }
   .toast.toast-success {
-    border-color: #3fb950;
-    color: #7ee787;
+    border-color: #9ece6a;
+    color: #9ece6a;
   }
 </style>
 </head>
@@ -434,9 +441,6 @@ function renderNode(node, map, depth, isLast, prefix, visibleIds) {
   const onActive = isOnActivePath(node.id, map);
   const isSelected = node.id === selectedId;
 
-  let roleClass = '';
-  if (node.role) roleClass = 'role-' + node.role;
-
   let toggle = '';
   if (hasChildren) {
     toggle = isCollapsed ? '⊞' : '⊟';
@@ -450,18 +454,52 @@ function renderNode(node, map, depth, isLast, prefix, visibleIds) {
   let activeMarker = onActive ? '<span class="active-marker">●</span> ' : '';
   let labelTag = node.label ? `<span class="label-tag">[${escapeHtml(node.label)}]</span>` : '';
 
+  // Build terminal-style prefix + content
+  let prefixHtml = '';
+  let contentClass = 'node-content';
+
+  if (node.type === 'message') {
+    if (node.role === 'assistant') {
+      prefixHtml = '<span class="role-prefix role-prefix-assistant">assistant:</span> ';
+    } else if (node.role === 'user') {
+      prefixHtml = '<span class="role-prefix role-prefix-user">user:</span> ';
+    } else {
+      prefixHtml = `<span class="role-prefix role-prefix-tool">${escapeHtml(node.role)}:</span> `;
+    }
+  } else if (node.type === 'compaction' || node.type === 'branch_summary') {
+    prefixHtml = '<span class="role-prefix role-prefix-branch">summary:</span> ';
+  } else if (node.type === 'label') {
+    prefixHtml = '<span class="role-prefix role-prefix-label">label:</span> ';
+  } else if (node.type === 'custom' || node.type === 'custom_message') {
+    prefixHtml = `<span class="role-prefix role-prefix-tool">${escapeHtml(node.customType || node.type)}:</span> `;
+  } else if (node.type === 'model_change') {
+    prefixHtml = '<span class="role-prefix role-prefix-tool">model:</span> ';
+  } else if (node.type === 'thinking_level_change') {
+    prefixHtml = '<span class="role-prefix role-prefix-tool">thinking:</span> ';
+  } else if (node.type === 'session_info') {
+    prefixHtml = '<span class="role-prefix role-prefix-tool">session:</span> ';
+  } else {
+    prefixHtml = `<span class="role-prefix role-prefix-tool">${escapeHtml(node.type)}:</span> `;
+  }
+
+  // Tool/toolResult entries are shown as muted bracketed content
   let displayContent = escapeHtml(node.content);
-  if (node.model) displayContent += ` <span style="color:#8b949e;font-size:11px;">(${escapeHtml(node.model)})</span>`;
+  if (node.role === 'toolResult' || node.role === 'bashExecution') {
+    contentClass = 'node-content-muted';
+  }
+  if (node.model) {
+    displayContent += ` <span style="color:#5c6370;font-size:11px;">(${escapeHtml(node.model)})</span>`;
+  }
 
   const lines = [];
   lines.push(`<li>`);
-  lines.push(`<div class="line ${roleClass} ${isSelected ? 'selected' : ''}" data-id="${node.id}" onclick="selectNode('${node.id}')">`);
+  lines.push(`<div class="line ${isSelected ? 'selected' : ''}" data-id="${node.id}" onclick="selectNode('${node.id}')">`);
   if (toggle) {
     lines.push(`<span class="toggle" onclick="event.stopPropagation();toggleCollapse('${node.id}')">${toggle}</span>`);
   } else {
-    lines.push(`<span style="width:16px;display:inline-block;"></span>`);
+    lines.push(`<span style="width:14px;display:inline-block;"></span>`);
   }
-  lines.push(`<span style="padding-left:${depth > 0 ? 0 : 4}px;">${connector}${activeMarker}${displayContent}${labelTag}</span>`);
+  lines.push(`<span style="padding-left:${depth > 0 ? 0 : 4}px;"><span class="tree-connector">${connector}</span>${activeMarker}${prefixHtml}<span class="${contentClass}">${displayContent}</span>${labelTag}</span>`);
   lines.push(`</div>`);
 
   if (hasChildren && !isCollapsed) {
@@ -551,14 +589,14 @@ function renderDetails(id) {
   float.innerHTML = `
     <h3>Entry Details</h3>
     <div class="detail-box">
-      <p><b>ID:</b> ${escapeHtml(node.id)}</p>
-      <p><b>Type:</b> ${escapeHtml(node.type)}</p>
-      ${node.role ? `<p><b>Role:</b> ${escapeHtml(node.role)}</p>` : ''}
-      ${node.customType ? `<p><b>Custom Type:</b> ${escapeHtml(node.customType)}</p>` : ''}
-      <p><b>Timestamp:</b> ${escapeHtml(node.timestamp)}</p>
-      ${node.model ? `<p><b>Model:</b> ${escapeHtml(node.model)}</p>` : ''}
-      ${node.label ? `<p><b>Label:</b> <span style="color:#b45309;font-weight:600;">${escapeHtml(node.label)}</span></p>` : ''}
-      <hr>
+      <p><b style="color:#7aa2f7">ID:</b> ${escapeHtml(node.id)}</p>
+      <p><b style="color:#7aa2f7">Type:</b> ${escapeHtml(node.type)}</p>
+      ${node.role ? `<p><b style="color:#7aa2f7">Role:</b> ${escapeHtml(node.role)}</p>` : ''}
+      ${node.customType ? `<p><b style="color:#7aa2f7">Custom Type:</b> ${escapeHtml(node.customType)}</p>` : ''}
+      <p><b style="color:#7aa2f7">Timestamp:</b> ${escapeHtml(node.timestamp)}</p>
+      ${node.model ? `<p><b style="color:#7aa2f7">Model:</b> ${escapeHtml(node.model)}</p>` : ''}
+      ${node.label ? `<p><b style="color:#7aa2f7">Label:</b> <span style="color:#d19a66;font-weight:600;">${escapeHtml(node.label)}</span></p>` : ''}
+      <hr style="border-color:#313244">
       <div class="content-preview">${escapeHtml(node.content)}</div>
     </div>
     <h3>Actions</h3>
@@ -571,12 +609,12 @@ function renderDetails(id) {
       <button onclick="triggerClearQueue()">✕ Cancel</button>
       <button class="btn-stop" onclick="triggerShutdown()">✕ Stop Tree UI</button>
       <div class="legend">
-        <span class="role-user">■ user</span>
-        <span class="role-assistant">■ assistant</span>
-        <span class="role-toolResult">■ tool</span>
-        <span class="role-branchSummary">■ compaction</span>
-        <span class="role-custom">■ label</span>
-        <span class="active-marker">● active</span>
+        <span><span style="color:#e5c07b">assistant:</span> assistant</span>
+        <span><span style="color:#abb2bf">user:</span> user</span>
+        <span><span style="color:#5c6370">tool:</span> tool</span>
+        <span><span style="color:#c678dd">summary:</span> compaction</span>
+        <span><span style="color:#d19a66">label:</span> label</span>
+        <span><span style="color:#7aa2f7">●</span> active</span>
       </div>
     </div>
   `;
@@ -639,7 +677,7 @@ async function triggerShutdown() {
   window.close();
   // If browser blocks it (not a window.open'd tab), show a message
   document.body.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0d1117;color:#c9d1d9;flex-direction:column;gap:12px;font-family:sans-serif;">
+    <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1e1e2e;color:#a9b1d6;flex-direction:column;gap:12px;font-family:sans-serif;">
       <h2>✕ Tree UI stopped</h2>
       <p>The server has been stopped. You can close this tab.</p>
     </div>
