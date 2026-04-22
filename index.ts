@@ -437,6 +437,8 @@ export default function (pi: ExtensionAPI) {
   });
 
   pi.on("session_shutdown", async () => {
+    globalCmdCtx = null;
+    globalPi = null;
     stopServer();
   });
 }
