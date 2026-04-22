@@ -67,7 +67,7 @@ let treeState: TreeState = {
 let pendingAction: QueuedAction | null = null;
 const sseClients: Set<ServerResponse> = new Set();
 let server: ReturnType<typeof createServer> | null = null;
-let globalCtx: ExtensionContext | null = null;
+let globalCmdCtx: ExtensionCommandContext | null = null;
 let globalPi: ExtensionAPI | null = null;
 
 async function executeAction(
@@ -320,14 +320,14 @@ function startServer(port: number) {
           res.end(JSON.stringify({ error: "No pending action" }));
           return;
         }
-        if (!globalCtx) {
+        if (!globalCmdCtx) {
           res.writeHead(503, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Extension context not available. Run /tree-ui first." }));
           return;
         }
         const action = pendingAction;
         pendingAction = null;
-        const results = await executeAction(action, globalCtx as ExtensionCommandContext, globalPi!);
+        const results = await executeAction(action, globalCmdCtx, globalPi!);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ executed: true, action: action.action, results }));
       } catch (err) {
@@ -399,7 +399,7 @@ export default function (pi: ExtensionAPI) {
     description: "Start the pi-tree-ui server and print the UI URL",
     handler: async (_args, ctx) => {
       globalPi = pi;
-      globalCtx = ctx;
+      globalCmdCtx = ctx;
       startServer(port);
       // Wait briefly for server to bind so we can report actual port
       await new Promise((r) => setTimeout(r, 100));
@@ -412,7 +412,6 @@ export default function (pi: ExtensionAPI) {
 
   pi.on("session_start", async (_event, ctx) => {
     globalPi = pi;
-    globalCtx = ctx;
     updateTreeState(ctx);
     startServer(port);
   });
