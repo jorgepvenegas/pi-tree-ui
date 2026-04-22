@@ -1,4 +1,4 @@
-import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
+import type { ExtensionAPI, ExtensionCommandContext, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -69,6 +69,67 @@ const sseClients: Set<ServerResponse> = new Set();
 let server: ReturnType<typeof createServer> | null = null;
 let globalCtx: ExtensionContext | null = null;
 let globalPi: ExtensionAPI | null = null;
+
+async function executeAction(
+  action: QueuedAction,
+  ctx: ExtensionCommandContext,
+  pi: ExtensionAPI,
+): Promise<string[]> {
+  const results: string[] = [];
+  try {
+    switch (action.action) {
+      case "navigate": {
+        const result = await ctx.navigateTree(action.targetId, {
+          summarize: action.summarize ?? false,
+          customInstructions: action.customInstructions,
+        });
+        if (result.cancelled) {
+          results.push(`navigate ${action.targetId}: cancelled`);
+        } else {
+          results.push(`navigate ${action.targetId}: ok`);
+        }
+        break;
+      }
+      case "fork": {
+        const result = await ctx.fork(action.targetId, {
+          position: action.position ?? "before",
+        });
+        if (result.cancelled) {
+          results.push(`fork ${action.targetId}: cancelled`);
+        } else {
+          results.push(`fork ${action.targetId}: ok`);
+        }
+        break;
+      }
+      case "label": {
+        pi.setLabel(action.targetId, action.label);
+        results.push(`label ${action.targetId}: ${action.label ?? "cleared"}`);
+        break;
+      }
+      case "compact": {
+        ctx.compact({
+          customInstructions: action.customInstructions,
+          onComplete: () => {
+            ctx.ui.notify("Compaction complete", "success");
+          },
+          onError: (err) => {
+            ctx.ui.notify(`Compaction failed: ${err.message}`, "error");
+          },
+        });
+        results.push("compact: queued");
+        break;
+      }
+      default: {
+        results.push(`unknown action: ${(action as any).action}`);
+        break;
+      }
+    }
+  } catch (err) {
+    results.push(`${action.action}: error - ${(err as Error).message}`);
+    console.error(`[pi-tree-ui] Error processing action:`, err);
+  }
+  return results;
+}
 
 function broadcastVersion(version: number) {
   const data = `data: ${JSON.stringify({ version })}\n\n`;
@@ -252,6 +313,30 @@ function startServer(port: number) {
       return;
     }
 
+    if (url === "/api/sync" && method === "POST") {
+      try {
+        if (!pendingAction) {
+          res.writeHead(409, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "No pending action" }));
+          return;
+        }
+        if (!globalCtx) {
+          res.writeHead(503, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Extension context not available. Run /tree-ui first." }));
+          return;
+        }
+        const action = pendingAction;
+        pendingAction = null;
+        const results = await executeAction(action, globalCtx as ExtensionCommandContext, globalPi!);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ executed: true, action: action.action, results }));
+      } catch (err) {
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: (err as Error).message }));
+      }
+      return;
+    }
+
     if (url === "/api/shutdown" && method === "POST") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ stopped: true }));
@@ -321,61 +406,9 @@ export default function (pi: ExtensionAPI) {
 
       const action = pendingAction;
       pendingAction = null;
-      const results: string[] = [];
 
       console.log(`[tree-ui-sync] Processing: ${JSON.stringify(action)}`);
-      try {
-        switch (action.action) {
-          case "navigate": {
-            const result = await ctx.navigateTree(action.targetId, {
-              summarize: action.summarize ?? false,
-              customInstructions: action.customInstructions,
-            });
-            if (result.cancelled) {
-              results.push(`navigate ${action.targetId}: cancelled`);
-            } else {
-              results.push(`navigate ${action.targetId}: ok`);
-            }
-            break;
-          }
-          case "fork": {
-            const result = await ctx.fork(action.targetId, {
-              position: action.position ?? "before",
-            });
-            if (result.cancelled) {
-              results.push(`fork ${action.targetId}: cancelled`);
-            } else {
-              results.push(`fork ${action.targetId}: ok`);
-            }
-            break;
-          }
-          case "label": {
-            pi.setLabel(action.targetId, action.label);
-            results.push(`label ${action.targetId}: ${action.label ?? "cleared"}`);
-            break;
-          }
-          case "compact": {
-            ctx.compact({
-              customInstructions: action.customInstructions,
-              onComplete: () => {
-                ctx.ui.notify("Compaction complete", "success");
-              },
-              onError: (err) => {
-                ctx.ui.notify(`Compaction failed: ${err.message}`, "error");
-              },
-            });
-            results.push("compact: queued");
-            break;
-          }
-          default: {
-            results.push(`unknown action: ${(action as any).action}`);
-            break;
-          }
-        }
-      } catch (err) {
-        results.push(`${action.action}: error - ${(err as Error).message}`);
-        console.error(`[tree-ui-sync] Error processing action:`, err);
-      }
+      const results = await executeAction(action, ctx, pi);
 
       const hasError = results.some(r => r.includes("error"));
       ctx.ui.notify(`Action ${action.action} ${hasError ? "failed" : "completed"}`, hasError ? "error" : "success");

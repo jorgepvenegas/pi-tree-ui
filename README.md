@@ -83,11 +83,13 @@ A single action is **prepared** in the browser. Once set, the UI shows the pendi
 
 ### Execute the pending action
 
+Click **🚀 Submit** in the browser sidebar, or run:
+
 ```
 /tree-ui-sync
 ```
 
-This executes the prepared action through pi's `ExtensionCommandContext`. The browser's **🚀 Submit** button reminds you to run this command.
+Both execute the prepared action directly through pi's `ExtensionCommandContext` — no LLM turn is triggered.
 
 ## Keyboard Shortcuts
 
@@ -97,7 +99,7 @@ The web UI supports standard mouse interaction:
 - **Click ⊟/⊞** — Expand or collapse a branch
 - **Expand All / Collapse All** — Sidebar buttons
 - **User Only / All** — Filter the tree view
-- **🚀 Submit** — Reminder to run `/tree-ui-sync` in pi
+- **🚀 Submit** — Execute the prepared action directly
 - **✕ Cancel** — Clear the prepared action
 
 ## Architecture
@@ -123,7 +125,7 @@ The web UI supports standard mouse interaction:
 3. Version is incremented and broadcast via SSE to all connected browsers
 4. Browser re-fetches `/api/tree` and re-renders
 5. Browser POSTs a single action to `/api/queue`
-6. User runs `/tree-ui-sync` in pi to execute the prepared action safely
+6. User clicks **🚀 Submit** (or runs `/tree-ui-sync` in pi) to execute the prepared action directly
 
 ## HTTP API
 
@@ -135,6 +137,7 @@ The web UI supports standard mouse interaction:
 | `POST` | `/api/queue` | Set the pending action (replaces any existing) |
 | `GET` | `/api/queue` | Get the current pending action, or `null` |
 | `DELETE` | `/api/queue` | Clear the pending action |
+| `POST` | `/api/sync` | Execute the pending action directly |
 | `POST` | `/api/shutdown` | Stop the HTTP server |
 
 ### Action format
