@@ -1,4 +1,4 @@
-# 🌳 tree-web
+# 🌳 pi-tree-ui
 
 A **pi extension** that serves an interactive web-based session tree explorer on `localhost`. Visualize your conversation history, navigate branches, fork sessions, set labels, and compact context — all from the browser.
 
@@ -14,7 +14,7 @@ A **pi extension** that serves an interactive web-based session tree explorer on
 - 🌲 **Visual tree** — Expand/collapse branches, color-coded by role (user, assistant, tool, compaction, label)
 - 🧭 **Active path** — The current conversation branch is highlighted with ●
 - 🏷 **Labels** — Set or clear labels on any entry directly from the UI
-- 🔀 **Fork & navigate** — Queue tree actions (navigate, fork, compact) and execute safely via `/tree-web-sync`
+- 🔀 **Fork & navigate** — Queue tree actions (navigate, fork, compact) and execute safely via `/tree-ui-sync`
 - 🚫 **Zero build step** — Single self-contained HTML file, no bundler needed
 - 🔒 **Localhost only** — Binds to `127.0.0.1`, no authentication required
 
@@ -23,13 +23,13 @@ A **pi extension** that serves an interactive web-based session tree explorer on
 Clone or copy the extension into your pi extensions directory:
 
 ```bash
-git clone https://github.com/jorgepvenegas/pi-tree-ui.git ~/.pi/agent/extensions/tree-web
+git clone https://github.com/jorgepvenegas/pi-tree-ui.git ~/.pi/agent/extensions/pi-tree-ui
 ```
 
-Or copy the files manually to `~/.pi/agent/extensions/tree-web/`:
+Or copy the files manually to `~/.pi/agent/extensions/pi-tree-ui/`:
 
 ```
-tree-web/
+pi-tree-ui/
 ├── index.ts          # Extension entry point
 ├── static/
 │   └── index.html    # Web UI
@@ -43,12 +43,12 @@ tree-web/
 The server auto-starts when a pi session begins. To start it manually or get the URL:
 
 ```
-/tree-web
+/tree-ui
 ```
 
 Output:
 ```
-[tree-web] Server running at http://127.0.0.1:8765
+[pi-tree-ui] Server running at http://127.0.0.1:8765
 ```
 
 Open the URL in your browser.
@@ -58,13 +58,13 @@ Open the URL in your browser.
 Pass the port via CLI flag:
 
 ```bash
-pi --tree-web-port 9000
+pi --pi-tree-ui-port 9000
 ```
 
 Or set an environment variable:
 
 ```bash
-TREE_WEB_PORT=9000 pi
+PI_TREE_UI_PORT=9000 pi
 ```
 
 If the port is in use, it automatically tries the next 10 ports.
@@ -79,12 +79,12 @@ If the port is in use, it automatically tries the next 10 ports.
 | **🏷 Set / clear label** | Bookmark an entry with a custom label |
 | **📋 Copy entry ID** | Copy the entry UUID to clipboard |
 
-Actions are **queued** in the browser and executed safely in pi via the `/tree-web-sync` command.
+Actions are **queued** in the browser and executed safely in pi via the `/tree-ui-sync` command.
 
 ### Sync queued actions
 
 ```
-/tree-web-sync
+/tree-ui-sync
 ```
 
 This drains the action queue and executes each pending action through pi's `ExtensionCommandContext`.
@@ -102,7 +102,7 @@ The web UI supports standard mouse interaction:
 
 ```
 ┌─────────────┐     ┌──────────────┐     ┌─────────────┐
-│  pi session │────▶│  tree-web    │────▶│ HTTP server │
+│  pi session │────▶│  pi-tree-ui  │────▶│ HTTP server │
 │  (events)   │     │  (state+SSE) │     │ (localhost) │
 └─────────────┘     └──────────────┘     └──────┬──────┘
                                                  │
@@ -121,7 +121,7 @@ The web UI supports standard mouse interaction:
 3. Version is incremented and broadcast via SSE to all connected browsers
 4. Browser re-fetches `/api/tree` and re-renders
 5. Browser POSTs actions to `/api/queue`
-6. User runs `/tree-web-sync` in pi to execute queued actions safely
+6. User runs `/tree-ui-sync` in pi to execute queued actions safely
 
 ## HTTP API
 
@@ -133,7 +133,7 @@ The web UI supports standard mouse interaction:
 | `POST` | `/api/queue` | Queue an action |
 | `GET` | `/api/queue` | List queued actions |
 | `DELETE` | `/api/queue` | Clear queue |
-| `POST` | `/api/sync` | Trigger `/tree-web-sync` in pi |
+| `POST` | `/api/sync` | Trigger `/tree-ui-sync` in pi |
 | `POST` | `/api/shutdown` | Stop the HTTP server |
 
 ### Action format
@@ -156,7 +156,7 @@ The extension is pure TypeScript with no build step. Edit `index.ts` or `static/
 ### File structure
 
 ```
-tree-web/
+pi-tree-ui/
 ├── index.ts          # Extension factory, HTTP server, SSE broadcaster
 ├── static/
 │   └── index.html    # Self-contained web UI (CSS + JS inline)

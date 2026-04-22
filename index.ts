@@ -206,7 +206,7 @@ function startServer(port: number) {
             throw new Error(`Invalid action: ${action.action}. Must be one of: ${validActions.join(", ")}`);
           }
           actionQueue.push(action);
-          console.log(`[tree-web] Queued action: ${action.action}, queue length: ${actionQueue.length}`);
+          console.log(`[pi-tree-ui] Queued action: ${action.action}, queue length: ${actionQueue.length}`);
           res.writeHead(202, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ queued: true, count: actionQueue.length }));
         } catch (err) {
@@ -235,9 +235,9 @@ function startServer(port: number) {
         if (!globalPi) throw new Error("Extension not initialized");
         const isIdle = globalCtx?.isIdle?.() ?? true;
         if (isIdle) {
-          globalPi.sendUserMessage("/tree-web-sync");
+          globalPi.sendUserMessage("/tree-ui-sync");
         } else {
-          globalPi.sendUserMessage("/tree-web-sync", { deliverAs: "followUp" });
+          globalPi.sendUserMessage("/tree-ui-sync", { deliverAs: "followUp" });
         }
         res.writeHead(202, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ triggered: true }));
@@ -266,17 +266,17 @@ function startServer(port: number) {
     if (err.code === "EADDRINUSE" && remainingAttempts > 0) {
       currentPort++;
       remainingAttempts--;
-      console.log(`[tree-web] Port ${currentPort - 1} in use, trying ${currentPort}`);
+      console.log(`[pi-tree-ui] Port ${currentPort - 1} in use, trying ${currentPort}`);
       server!.listen(currentPort, "127.0.0.1");
     } else {
-      console.error(`[tree-web] Failed to start server:`, err.message);
+      console.error(`[pi-tree-ui] Failed to start server:`, err.message);
       server!.off("error", onError);
       server = null;
     }
   };
 
   server.once("listening", () => {
-    console.log(`[tree-web] Server running at http://127.0.0.1:${currentPort}`);
+    console.log(`[pi-tree-ui] Server running at http://127.0.0.1:${currentPort}`);
     server!.off("error", onError);
   });
 
@@ -291,25 +291,25 @@ function stopServer() {
   sseClients.clear();
   if (server) {
     server.close(() => {
-      console.log("[tree-web] Server stopped");
+      console.log("[pi-tree-ui] Server stopped");
     });
     server = null;
   }
 }
 
 export default function (pi: ExtensionAPI) {
-  pi.registerFlag("tree-web-port", {
-    description: "Port for the tree-web HTTP server",
+  pi.registerFlag("pi-tree-ui-port", {
+    description: "Port for the pi-tree-ui HTTP server",
     type: "string",
     default: "8765",
   });
 
-  const port = parseInt(process.env.TREE_WEB_PORT ?? "", 10) || parseInt((pi.getFlag("tree-web-port") as string | undefined) ?? "8765", 10);
+  const port = parseInt(process.env.PI_TREE_UI_PORT ?? "", 10) || parseInt((pi.getFlag("pi-tree-ui-port") as string | undefined) ?? "8765", 10);
 
-  pi.registerCommand("tree-web-sync", {
-    description: "Execute pending actions queued from the tree-web browser UI",
+  pi.registerCommand("tree-ui-sync", {
+    description: "Execute pending actions queued from the pi-tree-ui browser UI",
     handler: async (_args, ctx) => {
-      console.log(`[tree-web-sync] Queue length: ${actionQueue.length}`);
+      console.log(`[tree-ui-sync] Queue length: ${actionQueue.length}`);
       if (actionQueue.length === 0) {
         ctx.ui.notify("No pending actions in queue", "info");
         return;
@@ -319,7 +319,7 @@ export default function (pi: ExtensionAPI) {
 
       while (actionQueue.length > 0) {
         const action = actionQueue.shift()!;
-        console.log(`[tree-web-sync] Processing: ${JSON.stringify(action)}`);
+        console.log(`[tree-ui-sync] Processing: ${JSON.stringify(action)}`);
         try {
           switch (action.action) {
             case "navigate": {
@@ -370,9 +370,9 @@ export default function (pi: ExtensionAPI) {
           }
         } catch (err) {
           results.push(`${action.action}: error - ${(err as Error).message}`);
-          console.error(`[tree-web-sync] Error processing action:`, err);
+          console.error(`[tree-ui-sync] Error processing action:`, err);
         }
-        console.log(`[tree-web-sync] Remaining: ${actionQueue.length}`);
+        console.log(`[tree-ui-sync] Remaining: ${actionQueue.length}`);
       }
 
       ctx.ui.notify(`Processed ${results.length} action(s)`, "success");
@@ -382,8 +382,8 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
-  pi.registerCommand("tree-web", {
-    description: "Start the tree-web server and print the UI URL",
+  pi.registerCommand("tree-ui", {
+    description: "Start the pi-tree-ui server and print the UI URL",
     handler: async (_args, ctx) => {
       globalPi = pi;
       globalCtx = ctx;
@@ -392,8 +392,8 @@ export default function (pi: ExtensionAPI) {
       await new Promise((r) => setTimeout(r, 100));
       const actualPort = server ? (server.address() as any)?.port ?? port : port;
       const url = `http://127.0.0.1:${actualPort}`;
-      ctx.ui.notify(`tree-web UI: ${url}`, "info");
-      console.log(`[tree-web] ${url}`);
+      ctx.ui.notify(`pi-tree-ui: ${url}`, "info");
+      console.log(`[pi-tree-ui] ${url}`);
     },
   });
 

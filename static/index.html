@@ -480,7 +480,7 @@ function renderDetails(id) {
       <button onclick="navigator.clipboard.writeText('${node.id}')">📋 Copy entry ID</button>
     </div>
     <div class="hint">
-      💡 Actions are queued. Click <b>🔄 Sync Actions</b> above or run <code>/tree-web-sync</code> in pi to execute.
+      💡 Actions are queued. Click <b>🔄 Sync Actions</b> above or run <code>/tree-ui-sync</code> in pi to execute.
     </div>
   `;
 }
@@ -590,7 +590,7 @@ function escapeHtml(str) {
 }
 
 function showToast(msg, type = 'info') {
-  console.log(`[tree-web] ${msg}`);
+  console.log(`[pi-tree-ui] ${msg}`);
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
