@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>pi Session Tree</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+    background: #0d1117;
+    color: #c9d1d9;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  header {
+    background: #161b22;
+    border-bottom: 1px solid #30363d;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  header h1 { font-size: 14px; color: #58a6ff; }
+  header .status { font-size: 11px; color: #8b949e; margin-left: auto; }
+  header .status.connected { color: #3fb950; }
+  header .status.disconnected { color: #f85149; }
+  header .badge {
+    background: #1f6feb;
+    color: #fff;
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: none;
+  }
+  header .badge.show { display: inline-block; }
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+  .sidebar {
+    width: 180px;
+    padding: 12px;
+    background: #161b22;
+    border-right: 1px solid #30363d;
+    overflow: auto;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .sidebar h3 {
+    font-size: 11px;
+    color: #8b949e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .sidebar button {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .sidebar button:hover { background: #30363d; }
+  .sidebar .btn-sync {
+    background: #1f6feb;
+    border-color: #1f6feb;
+    color: #fff;
+  }
+  .sidebar .btn-sync:hover { background: #388bfd; }
+  .sidebar .btn-stop {
+    background: #da3633;
+    border-color: #da3633;
+    color: #fff;
+  }
+  .sidebar .btn-stop:hover { background: #f85149; }
+  .tree-panel {
+    flex: 1;
+    padding: 12px;
+    overflow: auto;
+    font-family: monospace;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .tree-panel ul { list-style: none; padding-left: 0; }
+  .tree-panel li { position: relative; }
+  .tree-panel li .line {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 4px;
+    border-radius: 3px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tree-panel li .line:hover { background: #21262d; }
+  .tree-panel li .line.selected { background: #1f6feb33; outline: 1px solid #1f6feb; }
+  .tree-panel .toggle {
+    cursor: pointer;
+    width: 16px;
+    text-align: center;
+    color: #8b949e;
+    user-select: none;
+  }
+  .tree-panel .role-user { color: #7ee787; }
+  .tree-panel .role-assistant { color: #79c0ff; }
+  .tree-panel .role-toolResult { color: #f85149; }
+  .tree-panel .role-bashExecution { color: #f85149; }
+  .tree-panel .role-branchSummary { color: #d2a8ff; }
+  .tree-panel .role-compactionSummary { color: #d2a8ff; }
+  .tree-panel .role-custom { color: #ffa657; }
+  .tree-panel .label-tag {
+    color: #ffa657;
+    font-size: 11px;
+    margin-left: 4px;
+  }
+  .tree-panel .active-marker {
+    color: #58a6ff;
+    font-weight: bold;
+  }
+  .detail-panel {
+    width: 340px;
+    padding: 12px;
+    background: #161b22;
+    border-left: 1px solid #30363d;
+    overflow: auto;
+    flex-shrink: 0;
+  }
+  .sidebar .legend {
+    margin-top: auto;
+    font-size: 11px;
+    color: #8b949e;
+  }
+  .sidebar .legend span { display: block; margin-bottom: 2px; }
+  .detail-panel h3 {
+    font-size: 13px;
+    color: #c9d1d9;
+    margin-bottom: 10px;
+  }
+  .detail-box {
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 12px;
+    color: #1e3a5f;
+    margin-bottom: 12px;
+    word-break: break-word;
+  }
+  .detail-box p { margin-bottom: 4px; }
+  .detail-box hr { border-color: #93c5fd; margin: 6px 0; }
+  .detail-box .content-preview {
+    white-space: pre-wrap;
+    color: #374151;
+    max-height: 200px;
+    overflow: auto;
+  }
+  .detail-panel .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .detail-panel .actions button {
+    background: #21262d;
+    border: 1px solid #30363d;
+    color: #c9d1d9;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .detail-panel .actions button:hover { background: #30363d; }
+  .detail-panel .actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .detail-panel .hint {
+    margin-top: 10px;
+    padding: 8px;
+    background: #1f6feb22;
+    border: 1px solid #1f6feb;
+    border-radius: 6px;
+    font-size: 11px;
+    color: #58a6ff;
+  }
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #8b949e;
+    font-size: 13px;
+  }
+  .legend {
+    margin-top: 16px;
+    font-size: 11px;
+    color: #8b949e;
+  }
+  .legend span { margin-right: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌳 pi Session Tree</h1>
+  <span class="badge" id="pendingBadge">0 pending</span>
+  <span class="status disconnected" id="connStatus">● disconnected</span>
+</header>
+<div class="main">
+  <div class="sidebar" id="sidebar">
+    <h3>View</h3>
+    <button onclick="expandAll()">Expand All</button>
+    <button onclick="collapseAll()">Collapse All</button>
+    <button onclick="setFilter('user')">User Only</button>
+    <button onclick="setFilter('all')">All</button>
+    <h3>Actions</h3>
+    <button class="btn-sync" onclick="triggerSync()">🔄 Sync Actions</button>
+    <button onclick="triggerClearQueue()">🗑 Clear Queue</button>
+    <button class="btn-stop" onclick="triggerShutdown()">✕ Stop Tree UI</button>
+    <div class="legend">
+      <span class="role-user">■ user</span>
+      <span class="role-assistant">■ assistant</span>
+      <span class="role-toolResult">■ tool</span>
+      <span class="role-branchSummary">■ compaction</span>
+      <span class="role-custom">■ label</span>
+      <span class="active-marker">● active</span>
+    </div>
+  </div>
+  <div class="tree-panel" id="treePanel">
+    <div class="empty-state">Loading session tree...</div>
+  </div>
+  <div class="detail-panel" id="detailPanel">
+    <div class="empty-state">Select an entry to view details</div>
+  </div>
+</div>
+
+<script>
+let treeState = { version: 0, leafId: null, nodes: [] };
+let collapsed = new Set();
+let selectedId = null;
+let filter = 'all';
+let eventSource = null;
+
+function connect() {
+  if (eventSource) eventSource.close();
+  eventSource = new EventSource('/api/events');
+  eventSource.onopen = () => {
+    document.getElementById('connStatus').textContent = '● connected';
+    document.getElementById('connStatus').className = 'status connected';
+  };
+  eventSource.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    if (data.version > treeState.version) {
+      fetchTree();
+    }
+  };
+  eventSource.onerror = () => {
+    document.getElementById('connStatus').textContent = '● disconnected';
+    document.getElementById('connStatus').className = 'status disconnected';
+    setTimeout(connect, 3000);
+  };
+}
+
+async function fetchTree() {
+  try {
+    const res = await fetch('/api/tree');
+    treeState = await res.json();
+    renderTree();
+    updatePendingBadge();
+  } catch (err) {
+    console.error('Failed to fetch tree:', err);
+  }
+}
+
+async function updatePendingBadge() {
+  try {
+    const res = await fetch('/api/queue');
+    const queue = await res.json();
+    const badge = document.getElementById('pendingBadge');
+    badge.textContent = `${queue.length} pending`;
+    badge.className = queue.length > 0 ? 'badge show' : 'badge';
+  } catch {}
+}
+
+function getNodeMap() {
+  const map = new Map();
+  for (const n of treeState.nodes) map.set(n.id, n);
+  return map;
+}
+
+function getRootNodes() {
+  return treeState.nodes.filter(n => n.parentId === null);
+}
+
+function isOnActivePath(nodeId, map) {
+  let current = treeState.leafId;
+  while (current) {
+    if (current === nodeId) return true;
+    const node = map.get(current);
+    current = node ? node.parentId : null;
+  }
+  return false;
+}
+
+function computeVisibleIds(map) {
+  if (filter === 'all') return new Set(map.keys());
+  const visible = new Set();
+  // Mark user messages
+  for (const [id, node] of map) {
+    if (node.type === 'message' && node.role === 'user') {
+      visible.add(id);
+    }
+  }
+  // Mark ancestors of user messages so the path is visible
+  for (const id of visible) {
+    let current = map.get(id);
+    while (current && current.parentId) {
+      visible.add(current.parentId);
+      current = map.get(current.parentId);
+    }
+  }
+  return visible;
+}
+
+function renderNode(node, map, depth, isLast, prefix, visibleIds) {
+  const hasChildren = node.children.length > 0;
+  const isCollapsed = collapsed.has(node.id);
+  const onActive = isOnActivePath(node.id, map);
+  const isSelected = node.id === selectedId;
+
+  let roleClass = '';
+  if (node.role) roleClass = 'role-' + node.role;
+
+  let toggle = '';
+  if (hasChildren) {
+    toggle = isCollapsed ? '⊞' : '⊟';
+  }
+
+  let connector = '';
+  if (depth > 0) {
+    connector = prefix + (isLast ? '└─ ' : '├─ ');
+  }
+
+  let activeMarker = onActive ? '<span class="active-marker">●</span> ' : '';
+  let labelTag = node.label ? `<span class="label-tag">[${escapeHtml(node.label)}]</span>` : '';
+
+  let displayContent = escapeHtml(node.content);
+  if (node.model) displayContent += ` <span style="color:#8b949e;font-size:11px;">(${escapeHtml(node.model)})</span>`;
+
+  const lines = [];
+  lines.push(`<li>`);
+  lines.push(`<div class="line ${roleClass} ${isSelected ? 'selected' : ''}" data-id="${node.id}" onclick="selectNode('${node.id}')">`);
+  if (toggle) {
+    lines.push(`<span class="toggle" onclick="event.stopPropagation();toggleCollapse('${node.id}')">${toggle}</span>`);
+  } else {
+    lines.push(`<span style="width:16px;display:inline-block;"></span>`);
+  }
+  lines.push(`<span style="padding-left:${depth > 0 ? 0 : 4}px;">${connector}${activeMarker}${displayContent}${labelTag}</span>`);
+  lines.push(`</div>`);
+
+  if (hasChildren && !isCollapsed) {
+    lines.push(`<ul>`);
+    const visibleChildren = node.children
+      .map(id => map.get(id))
+      .filter(c => c && visibleIds.has(c.id));
+    for (let i = 0; i < visibleChildren.length; i++) {
+      const child = visibleChildren[i];
+      const childPrefix = depth > 0 ? (isLast ? '   ' : '│  ') : '';
+      lines.push(renderNode(child, map, depth + 1, i === visibleChildren.length - 1, prefix + childPrefix, visibleIds));
+    }
+    lines.push(`</ul>`);
+  }
+  lines.push(`</li>`);
+  return lines.join('');
+}
+
+function renderTree() {
+  const panel = document.getElementById('treePanel');
+  const map = getNodeMap();
+  const visibleIds = computeVisibleIds(map);
+  const roots = getRootNodes().filter(n => visibleIds.has(n.id));
+
+  if (roots.length === 0) {
+    if (treeState.nodes.length === 0) {
+      panel.innerHTML = '<div class="empty-state">No session entries yet</div>';
+    } else {
+      panel.innerHTML = '<div class="empty-state">No user messages match this filter</div>';
+    }
+    return;
+  }
+
+  let html = '<ul>';
+  for (let i = 0; i < roots.length; i++) {
+    html += renderNode(roots[i], map, 0, i === roots.length - 1, '', visibleIds);
+  }
+  html += '</ul>';
+
+  panel.innerHTML = html;
+}
+
+function selectNode(id) {
+  selectedId = id;
+  renderTree();
+  renderDetails(id);
+}
+
+function renderDetails(id) {
+  const map = getNodeMap();
+  const node = map.get(id);
+  if (!node) return;
+
+  const panel = document.getElementById('detailPanel');
+  panel.innerHTML = `
+    <h3>Entry Details</h3>
+    <div class="detail-box">
+      <p><b>ID:</b> ${escapeHtml(node.id)}</p>
+      <p><b>Type:</b> ${escapeHtml(node.type)}</p>
+      ${node.role ? `<p><b>Role:</b> ${escapeHtml(node.role)}</p>` : ''}
+      ${node.customType ? `<p><b>Custom Type:</b> ${escapeHtml(node.customType)}</p>` : ''}
+      <p><b>Timestamp:</b> ${escapeHtml(node.timestamp)}</p>
+      ${node.model ? `<p><b>Model:</b> ${escapeHtml(node.model)}</p>` : ''}
+      ${node.label ? `<p><b>Label:</b> <span style="color:#b45309;font-weight:600;">${escapeHtml(node.label)}</span></p>` : ''}
+      <hr>
+      <div class="content-preview">${escapeHtml(node.content)}</div>
+    </div>
+    <h3>Actions</h3>
+    <div class="actions">
+      <button onclick="queueAction({action:'navigate',targetId:'${node.id}'})">↩ Navigate to here</button>
+      <button onclick="queueAction({action:'fork',targetId:'${node.id}'})">🔀 Fork from here</button>
+      <button onclick="queueAction({action:'compact'})">📝 Compact context</button>
+      <button onclick="promptLabel('${node.id}')">🏷 Set / clear label</button>
+      <button onclick="navigator.clipboard.writeText('${node.id}')">📋 Copy entry ID</button>
+    </div>
+    <div class="hint">
+      💡 Actions are queued. Click <b>🔄 Sync Actions</b> above or run <code>/tree-web-sync</code> in pi to execute.
+    </div>
+  `;
+}
+
+async function queueAction(action) {
+  try {
+    const res = await fetch('/api/queue', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(action),
+    });
+    const data = await res.json();
+    updatePendingBadge();
+    if (res.ok) {
+      showToast(`Queued: ${action.action}`);
+    } else {
+      showToast(`Error: ${data.error}`, 'error');
+    }
+  } catch (err) {
+    showToast(`Error: ${err.message}`, 'error');
+  }
+}
+
+async function triggerSync() {
+  try {
+    const res = await fetch('/api/sync', { method: 'POST' });
+    const data = await res.json();
+    if (res.ok) {
+      showToast('Sync triggered in pi');
+      // Poll immediately to reflect cleared queue
+      await updatePendingBadge();
+    } else {
+      showToast(`Sync failed: ${data.error}`, 'error');
+    }
+  } catch (err) {
+    showToast(`Sync error: ${err.message}`, 'error');
+  }
+}
+
+async function triggerClearQueue() {
+  try {
+    const res = await fetch('/api/queue', { method: 'DELETE' });
+    const data = await res.json();
+    if (res.ok) {
+      showToast('Queue cleared');
+      await updatePendingBadge();
+    } else {
+      showToast(`Clear failed: ${data.error}`, 'error');
+    }
+  } catch (err) {
+    showToast(`Clear error: ${err.message}`, 'error');
+  }
+}
+
+async function triggerShutdown() {
+  try {
+    await fetch('/api/shutdown', { method: 'POST' });
+  } catch {}
+  // Server is stopping; try to close the tab
+  window.close();
+  // If browser blocks it (not a window.open'd tab), show a message
+  document.body.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#0d1117;color:#c9d1d9;flex-direction:column;gap:12px;font-family:sans-serif;">
+      <h2>✕ Tree UI stopped</h2>
+      <p>The server has been stopped. You can close this tab.</p>
+    </div>
+  `;
+}
+
+function promptLabel(targetId) {
+  const value = prompt('Enter label (empty to clear):');
+  if (value === null) return;
+  queueAction({ action: 'label', targetId, label: value || undefined });
+}
+
+function toggleCollapse(id) {
+  if (collapsed.has(id)) collapsed.delete(id);
+  else collapsed.add(id);
+  renderTree();
+}
+
+function expandAll() {
+  collapsed.clear();
+  renderTree();
+}
+
+function collapseAll() {
+  const map = getNodeMap();
+  for (const node of treeState.nodes) {
+    if (node.children.length > 0) collapsed.add(node.id);
+  }
+  renderTree();
+}
+
+function setFilter(f) {
+  filter = f;
+  renderTree();
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function showToast(msg, type = 'info') {
+  console.log(`[tree-web] ${msg}`);
+}
+
+// Init
+fetchTree();
+connect();
+setInterval(updatePendingBadge, 2000);
+</script>
+</body>
+</html>
